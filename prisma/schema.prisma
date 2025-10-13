@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Event {
+  id                 String   @id @default(uuid())
+  title              String
+  car_info           String?
+  tickets_total      Int
+  ticket_price_cents Int      @default(1000)
+  status             String // open | closed | completed
+  winner_ticket_id   String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  tickets Ticket[]
+}
+
+model Ticket {
+  id                String   @id @default(uuid())
+  external_order_id String?
+  buyer_email       String?
+  buyer_name        String?
+  serial_number     Int
+  created_at        DateTime @default(now())
+  event_id          String
+
+  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+
+  @@unique([event_id, serial_number])
+}
+
+model DrawLog {
+  id               String   @id @default(uuid())
+  event_id         String
+  performed_by     String
+  method           String   @default("uniform_random_serial")
+  picked_ticket_id String
+  created_at       DateTime @default(now())
+}
