@@ -6,23 +6,31 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request } from 'express';
+import { verify } from 'jsonwebtoken';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const req: Request = context.switchToHttp().getRequest();
-    const res: Response = context.switchToHttp().getResponse();
+    // const res: Response = context.switchToHttp().getResponse();
     const next: NextFunction = context.switchToHttp().getNext();
     try {
-      const authToken = req.headers.authorization?.split(' ')[1];
+      const authToken = req.headers.authorization;
       // Check if the token is present in the request headers
-      const encoded = authToken?.startsWith('Basic ') ? authToken.slice(6) : '';
-      const decoded = Buffer.from(encoded, 'base64').toString('utf8');
-      const pass = decoded.split(':')[1] || '';
-      if (pass !== ENV.ADMIN_BASIC_AUTH_PASSWORD) {
-        res.setHeader('WWW-Authenticate', 'Basic realm="admin"');
-        throw new UnauthorizedException('Authentication required');
+      if (!authToken) {
+        throw new UnauthorizedException('No token provided');
+      }
+      if (!authToken.startsWith('Bearer ')) {
+        throw new UnauthorizedException('Invalid token format');
+      }
+      const token = authToken.split(' ')[1];
+      const decodedToken = verify(token, ENV.JWT_SECRET);
+      if (!decodedToken || typeof decodedToken === 'string' || !decodedToken.id) {
+        throw new UnauthorizedException('Invalid token');
+      }
+      if (decodedToken.id !== ENV.ADMIN_BASIC_AUTH_PASSWORD) {
+        throw new UnauthorizedException('Invalid token');
       }
 
       return true;

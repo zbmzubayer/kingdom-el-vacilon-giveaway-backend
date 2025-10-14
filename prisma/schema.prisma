@@ -34,6 +34,7 @@ model Ticket {
   event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
 
   @@unique([event_id, serial_number])
+  @@index([event_id], type: Hash)
 }
 
 model DrawLog {

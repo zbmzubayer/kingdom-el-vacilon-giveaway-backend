@@ -29,7 +29,10 @@ export class EventService {
   }
 
   findAll() {
-    return this.prisma.event.findMany({ orderBy: { created_at: 'desc' } });
+    return this.prisma.event.findMany({
+      orderBy: { created_at: 'desc' },
+      include: { tickets: true },
+    });
   }
 
   async findOne(id: string) {
