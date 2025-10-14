@@ -31,17 +31,31 @@
 $ pnpm install
 ```
 
-## Compile and run the project
+## Add environment variables
+
+Create a `.env` file in the root directory of your project and add the necessary environment variables. You can use the `.env.example` file as a reference.
+
+## Add Prisma setup
 
 ```bash
-# development
-$ pnpm run start
+$ npx prisma db push
+```
 
-# watch mode
-$ pnpm run start:dev
+## Run the project in Development
+
+```bash
+# dev watch mode
+$ pnpm dev
+```
+
+## Run the project in Production
+
+```bash
+# build the project
+$ pnpm build
 
 # production mode
-$ pnpm run start:prod
+$ pnpm start
 ```
 
 ## Run tests
