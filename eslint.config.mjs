@@ -43,6 +43,16 @@ export default tseslint.config(
       'no-console': 'warn',
       'prettier/prettier': 'warn',
       // 'prettier/prettier': ['error', { endOfLine: 'auto' }],
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          vars: 'all',
+          varsIgnorePattern: '^_',
+          args: 'after-used',
+          argsIgnorePattern: '^_',
+          destructuredArrayIgnorePattern: '^_',
+        },
+      ],
     },
   },
 );
