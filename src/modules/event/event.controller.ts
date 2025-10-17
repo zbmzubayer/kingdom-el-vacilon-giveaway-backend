@@ -1,7 +1,7 @@
 import { ENV } from '@/config/env';
 import { AuthGuard } from '@/modules/auth/auth.guard';
 import { DrawEventWinnerDto } from '@/modules/event/dto/draw-event-winner.dto';
-import { CreateTicketDto } from '@/modules/ticket/dto/create-ticket.dto';
+import { SetEventWinnerDto } from '@/modules/event/dto/set-event-winner.dto';
 import {
   Body,
   Controller,
@@ -33,59 +33,6 @@ export class EventController {
   @UseGuards(AuthGuard)
   findAll() {
     return this.eventService.findAll();
-  }
-
-  @Get(':id')
-  @UseGuards(AuthGuard)
-  findOne(@Param('id') id: string) {
-    return this.eventService.findOne(id);
-  }
-
-  @Put(':id')
-  @UseGuards(AuthGuard)
-  update(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto) {
-    return this.eventService.update(id, updateEventDto);
-  }
-
-  @Delete(':id')
-  @UseGuards(AuthGuard)
-  remove(@Param('id') id: string) {
-    return this.eventService.remove(id);
-  }
-
-  @Get(':id/sold')
-  @UseGuards(AuthGuard)
-  getTotalTicketSoldCount(@Param('id') id: string) {
-    return this.eventService.getTotalTicketSoldCount(id);
-  }
-
-  @Post(':id/sales/sync')
-  @UseGuards(AuthGuard)
-  salesSync(@Param('id') id: string, @Body() createTicketDto: CreateTicketDto) {
-    return this.eventService.salesSync(id, createTicketDto);
-  }
-
-  @Post(':id/draw')
-  @UseGuards(AuthGuard)
-  drawEventWinner(@Param('id') id: string, @Body() drawEventWinnerDto: DrawEventWinnerDto) {
-    return this.eventService.drawWinner(id, drawEventWinnerDto);
-  }
-
-  @Get(':id/embed')
-  @UseGuards(AuthGuard)
-  getEventEmbedHtml(@Param('id') id: string, @Req() req: Request) {
-    const base =
-      process.env.NODE_ENV === 'production'
-        ? `https://${req.headers.host}`
-        : `http://localhost:${ENV.PORT || 8080}`;
-    const token = ENV.PUBLIC_API_TOKEN ? ` data-token="${ENV.PUBLIC_API_TOKEN}"` : '';
-
-    const html = [
-      `<div id="giveaway-progress"></div>`,
-      `<script src="${base}/widget.js" data-event-id="${req.params.id}"${token}></script>`,
-    ].join('\n');
-
-    return { html };
   }
 
   @Get('/widget.js')
@@ -131,5 +78,64 @@ export class EventController {
     tick();
     setInterval(tick, 45000);
   })();`);
+  }
+
+  @Get(':id')
+  @UseGuards(AuthGuard)
+  findOne(@Param('id') id: string) {
+    return this.eventService.findOne(id);
+  }
+
+  @Put(':id')
+  @UseGuards(AuthGuard)
+  update(@Param('id') id: string, @Body() updateEventDto: UpdateEventDto) {
+    return this.eventService.update(id, updateEventDto);
+  }
+
+  @Delete(':id')
+  @UseGuards(AuthGuard)
+  remove(@Param('id') id: string) {
+    return this.eventService.remove(id);
+  }
+
+  @Get(':id/tickets')
+  @UseGuards(AuthGuard)
+  findTicketsByEventId(@Param('id') id: string) {
+    return this.eventService.findTicketsByEventId(id);
+  }
+
+  @Get(':id/sold')
+  @UseGuards(AuthGuard)
+  getTotalTicketSoldCount(@Param('id') id: string) {
+    return this.eventService.getTotalTicketSoldCount(id);
+  }
+
+  @Post(':id/draw')
+  @UseGuards(AuthGuard)
+  drawEventWinner(@Param('id') id: string, @Body() drawEventWinnerDto: DrawEventWinnerDto) {
+    return this.eventService.drawEventWinner(id, drawEventWinnerDto);
+  }
+
+  @Get(':id/embed')
+  @UseGuards(AuthGuard)
+  getEventEmbedHtml(@Param('id') id: string, @Req() req: Request) {
+    const base =
+      process.env.NODE_ENV === 'production'
+        ? `https://${req.headers.host}`
+        : `http://localhost:${ENV.PORT || 8080}`;
+    const token = ENV.PUBLIC_API_TOKEN ? ` data-token="${ENV.PUBLIC_API_TOKEN}"` : '';
+
+    const html = [
+      `<div id="giveaway-progress"></div>`,
+      `<script src="${base}/api/v1/event/widget.js" data-event-id="${req.params.id}"${token}></script>`,
+    ].join('\n');
+
+    return { html };
+  }
+
+  @Post(':id/winner')
+  @UseGuards(AuthGuard)
+  setWinner(@Param('id') id: string, @Body() setEventWinnerDto: SetEventWinnerDto) {
+    return this.eventService.setEventWinner(id, setEventWinnerDto);
   }
 }

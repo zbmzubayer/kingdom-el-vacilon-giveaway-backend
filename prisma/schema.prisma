@@ -19,7 +19,8 @@ model Event {
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
 
-  tickets Ticket[]
+  winner_ticket Ticket?  @relation("WinnerTicket", fields: [winner_ticket_id], references: [id])
+  tickets       Ticket[] @relation("EventTickets")
 }
 
 model Ticket {
@@ -31,7 +32,8 @@ model Ticket {
   created_at        DateTime @default(now())
   event_id          String
 
-  event Event @relation(fields: [event_id], references: [id], onDelete: Cascade)
+  event  Event   @relation("EventTickets", fields: [event_id], references: [id], onDelete: Cascade)
+  events Event[] @relation("WinnerTicket")
 
   @@unique([event_id, serial_number])
   @@index([event_id], type: Hash)

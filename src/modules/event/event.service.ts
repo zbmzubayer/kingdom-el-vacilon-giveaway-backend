@@ -1,7 +1,7 @@
 import { EVENT_STATUS } from '@/enums/event.enum';
 import { DrawEventWinnerDto } from '@/modules/event/dto/draw-event-winner.dto';
+import { SetEventWinnerDto } from '@/modules/event/dto/set-event-winner.dto';
 import { PrismaService } from '@/modules/prisma/prisma.service';
-import { CreateTicketDto } from '@/modules/ticket/dto/create-ticket.dto';
 import {
   BadRequestException,
   ConflictException,
@@ -31,7 +31,7 @@ export class EventService {
   findAll() {
     return this.prisma.event.findMany({
       orderBy: { created_at: 'desc' },
-      include: { tickets: true },
+      include: { _count: { select: { tickets: true } } },
     });
   }
 
@@ -70,6 +70,13 @@ export class EventService {
     return this.prisma.event.delete({ where: { id } });
   }
 
+  findTicketsByEventId(id: string) {
+    return this.prisma.ticket.findMany({
+      where: { event_id: id },
+      orderBy: { serial_number: 'asc' },
+    });
+  }
+
   async getTotalTicketSoldCount(id: string) {
     const result = await this.prisma.event.findUnique({
       where: { id },
@@ -82,29 +89,7 @@ export class EventService {
     return { sold: result._count.tickets };
   }
 
-  async salesSync(id: string, createTicketDto: CreateTicketDto) {
-    const event = await this.prisma.event.findUnique({ where: { id } });
-    if (!event) throw new NotFoundException('Event not found');
-
-    const soldCount = await this.getTotalTicketSoldCount(event.id);
-
-    if (createTicketDto.targetCount <= soldCount.sold) {
-      return { added: 0, sold: soldCount.sold };
-    }
-
-    // Insert serials soldCount+1 .. targetCount
-    // const toAdd = parsed.data.targetCount - current;
-    // const rows = Array.from({ length: toAdd }, (_, i) => ({
-    //   event_id: ev.id,
-    //   serial_number: BigInt(current + i + 1),
-    // }));
-
-    if (createTicketDto.targetCount >= event.tickets_total) {
-      throw new BadRequestException('Event Sold Out');
-    }
-  }
-
-  async drawWinner(id: string, drawEventWinnerDto: DrawEventWinnerDto) {
+  async drawEventWinner(id: string, drawEventWinnerDto: DrawEventWinnerDto) {
     const event = await this.prisma.event.findUnique({
       where: { id },
       select: { _count: { select: { tickets: true } }, tickets_total: true },
@@ -146,6 +131,46 @@ export class EventService {
       ticketSerial: winningTicket.serial_number,
       buyer_name: winningTicket.buyer_name,
       buyer_email: winningTicket.buyer_email,
+    };
+  }
+
+  async setEventWinner(id: string, setEventWinnerDto: SetEventWinnerDto) {
+    const event = await this.prisma.event.findUnique({
+      where: { id },
+      select: { status: true, tickets_total: true },
+    });
+    if (!event) throw new NotFoundException('Event not found');
+
+    if (event.status === EVENT_STATUS.completed) {
+      throw new ConflictException('Event already completed');
+    }
+
+    const ticket = await this.prisma.ticket.findFirst({
+      where: { event_id: id, serial_number: setEventWinnerDto.serial_number },
+    });
+
+    if (!ticket) throw new NotFoundException('Ticket with given serial number not found');
+
+    const [log] = await this.prisma.$transaction([
+      this.prisma.drawLog.create({
+        data: {
+          event_id: id,
+          performed_by: setEventWinnerDto.performed_by,
+          method: 'manual_serial',
+          picked_ticket_id: ticket.id,
+        },
+      }),
+      this.prisma.event.update({
+        where: { id },
+        data: { status: EVENT_STATUS.completed, winner_ticket_id: ticket.id },
+      }),
+    ]);
+
+    return {
+      drawLogId: log.id,
+      winnerSerial: ticket.serial_number,
+      winnerName: ticket.buyer_name ?? null,
+      winnerEmail: ticket.buyer_email ?? null,
     };
   }
 }
