@@ -5,8 +5,6 @@ import helmet from 'helmet';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { type NestExpressApplication } from '@nestjs/platform-express';
 
-import { ENV } from './config/env';
-
 export const configureNestApp = (app: NestExpressApplication) => {
   app.enableShutdownHooks();
 
@@ -18,7 +16,7 @@ export const configureNestApp = (app: NestExpressApplication) => {
   });
 
   app.use(helmet());
-  app.enableCors({ origin: [ENV.CLIENT_URL, ENV.GHL_URL] });
+  app.enableCors({ origin: '*' }); // TODO: restrict later
 
   app.use(compression());
 
