@@ -3,7 +3,7 @@ import { PublicGetEventQueryDto } from '@/modules/public/dto/public-get-event-qu
 import { Controller, Get, Query, UnauthorizedException } from '@nestjs/common';
 import { PublicService } from './public.service';
 
-@Controller('public')
+@Controller('publics')
 export class PublicController {
   constructor(private readonly publicService: PublicService) {}
 

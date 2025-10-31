@@ -1,7 +1,7 @@
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class PublicGetEventQueryDto {
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   token: string;
 

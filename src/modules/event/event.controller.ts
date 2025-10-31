@@ -42,42 +42,83 @@ export class EventController {
         ? `https://${req.headers.host}`
         : `http://localhost:${ENV.PORT || 8080}`;
 
-    res.type('application/javascript').send(`(function(){
-    function qs(el){return document.querySelector(el)}
-    var script = document.currentScript;
-    if(!script){return;}
-    var eventId = script.getAttribute('data-event-id');
-    if(!eventId){ return; }
-    var token = script.getAttribute('data-token') || '';
-    var mount = document.getElementById('giveaway-progress');
-    if(!mount){ return; }
+    res.type('application/javascript').send(`(function () {
+  function qs(el) {
+    return document.querySelector(el);
+  }
+  var script = document.currentScript;
+  if (!script) {
+    return;
+  }
+  var eventId = script.getAttribute("data-event-id");
+  console.log(eventId);
+  if (!eventId) {
+    return;
+  }
+  var token = script.getAttribute("data-token") || "";
+  var mount = document.getElementById("giveaway-progress");
+  if (!mount) {
+    return;
+  }
 
-    function render(state){
-      var sold = state.tickets_sold || 0, total = state.tickets_total || 0;
-      var pct = total ? Math.floor((sold/total)*100) : 0;
-      mount.innerHTML =
-        '<div style="font-family:inherit;max-width:600px">' +
-          '<div style="margin-bottom:8px;font-weight:600">' + (state.title||'') + '</div>' +
-          '<div role="progressbar" aria-valuemin="0" aria-valuemax="'+ total +'" aria-valuenow="'+ sold +'" style="height:10px;border:1px solid #ccc;border-radius:6px;overflow:hidden">' +
-            '<div style="height:100%;width:'+ pct +'%;"></div>' +
-          '</div>' +
-          '<div style="margin-top:6px;font-size:12px">' + sold + ' / ' + total + ' (' + pct + '%) — ' + (state.status||'') + '</div>' +
-          (state.winner ? '<div style="margin-top:8px;font-weight:600">Winner: #'+ state.winner.serial + (state.winner.name ? ' — ' + state.winner.name : '') + '</div>' : '') +
-        '</div>';
-    }
+  function render(state) {
+    var sold = state.tickets_sold || 0,
+      total = state.tickets_total || 0;
+    var pct = total ? Math.floor((sold / total) * 100) : 0;
+    mount.innerHTML =
+      '<div style="font-family:inherit;max-width:600px">' +
+      '<div style="margin-bottom:8px;font-weight:600">' +
+      (state.title || "") +
+      "</div>" +
+      '<div role="progressbar" aria-valuemin="0" aria-valuemax="' +
+      total +
+      '" aria-valuenow="' +
+      sold +
+      '" style="height:10px;border:1px solid #df2f2fff;border-radius:6px;overflow:hidden">' +
+      '<div style="height:100%;width:' +
+      pct +
+      '%;background-color:#df2f2fff;transition:width 0.3s ease"></div>' +
+      "</div>" +
+      '<div style="margin-top:6px;font-size:12px">' +
+      sold +
+      " / " +
+      total +
+      " (" +
+      pct +
+      "%) — " +
+      (state.status || "") +
+      "</div>" +
+      (state.winner
+        ? '<div style="margin-top:8px;font-weight:600">Winner: #' +
+          state.winner.serial +
+          (state.winner.name ? " — " + state.winner.name : "") +
+          "</div>"
+        : "") +
+      "</div>";
+  }
 
-    async function tick(){
-      try{
-        var url = '${base}/api/public/status?eventId=' + encodeURIComponent(eventId) + (token ? '&token=' + encodeURIComponent(token) : '');
-        var r = await fetch(url, { cache: 'no-store' });
-        if(!r.ok) return;
-        var j = await r.json();
-        render(j);
-      }catch(e){}
-    }
-    tick();
-    setInterval(tick, 45000);
-  })();`);
+  // async function tick() {
+  //   try {
+  //     var url =
+  //       "${base}/api/v1/publics/status?eventId=" +
+  //       encodeURIComponent(eventId) +
+  //       (token ? "&token=" + encodeURIComponent(token) : "");
+  //     var r = await fetch(url, { cache: "no-store" });
+  //     if (!r.ok) return;
+  //     var j = await r.json();
+  //     render(j);
+  //   } catch (e) {}
+  // }
+  // tick();
+  // setInterval(tick, 45000);
+  render({
+    title: "Sample Giveaway Event",
+    tickets_sold: 75,
+    tickets_total: 100,
+    status: "open",
+    winner: null,
+  });
+})();`);
   }
 
   @Get(':id')
@@ -127,7 +168,40 @@ export class EventController {
 
     const html = [
       `<div id="giveaway-progress"></div>`,
-      `<script src="${base}/api/v1/event/widget.js" data-event-id="${req.params.id}"${token}></script>`,
+      `<script data-event-id="${id}"${token}>`,
+      `(function () {`,
+      `  var script = document.currentScript;`,
+      `  if (!script) return;`,
+      `  var eventId = script.getAttribute("data-event-id");`,
+      `  if (!eventId) return;`,
+      `  var token = script.getAttribute("data-token") || "";`,
+      `  var mount = document.getElementById("giveaway-progress");`,
+      `  if (!mount) return;`,
+      ``,
+      `  function render(state) {`,
+      `    var sold = state.tickets_sold || 0, total = state.tickets_total || 0;`,
+      `    var pct = total ? Math.floor((sold / total) * 100) : 0;`,
+      `    mount.innerHTML = '<div style="font-family:inherit;max-width:600px">' +`,
+      `      '<div style="margin-bottom:8px;font-weight:600">' + (state.title || "") + '</div>' +`,
+      `      '<div role="progressbar" style="height:10px;border:1px solid #df2f2fff;border-radius:6px;overflow:hidden">' +`,
+      `      '<div style="height:100%;width:' + pct + '%;background-color:#df2f2fff"></div></div>' +`,
+      `      '<div style="margin-top:6px;font-size:12px">' + sold + ' / ' + total + ' (' + pct + '%) — ' + (state.status || '') + '</div>' +`,
+      `      (state.winner ? '<div style="margin-top:8px;font-weight:600">Winner: #' + state.winner.serial_number + (state.winner.buyer_name ? ' — ' + state.winner.buyer_name : '') + '</div>' : '') + '</div>';`,
+      `  }`,
+      ``,
+      `  async function tick() {`,
+      `    try {`,
+      `      var url = "${base}/api/v1/publics/status?eventId=" + encodeURIComponent(eventId) + (token ? "&token=" + encodeURIComponent(token) : "");`,
+      `      var r = await fetch(url, { cache: "no-store" });`,
+      `      if (!r.ok) return;`,
+      `      var j = await r.json();`,
+      `      render(j);`,
+      `    } catch (e) {}`,
+      `  }`,
+      `  tick();`,
+      `  setInterval(tick, 45000);`,
+      `})();`,
+      `</script>`,
     ].join('\n');
 
     return { html };
